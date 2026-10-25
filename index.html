@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NutriHome Clínica (online)</title>
+<style>
+  :root { --verde:#0f5b44; --ouro:#c9a348; --fundo:#f4f7f5; --texto:#17231d; --cinza:#66756b; --borda:#dce5dc; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px system-ui, sans-serif; color:var(--texto); background:var(--fundo); }
+  header { background:var(--verde); color:#fff; padding:12px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  header strong { font-size:17px; }
+  header span { opacity:.85; font-size:13px; flex:1; }
+  main { max-width:820px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:16px; margin-bottom:16px; }
+  h2 { margin:0 0 12px; font-size:18px; color:var(--verde); }
+  label { display:block; font-size:13px; color:var(--cinza); margin:10px 0 4px; }
+  input, select { width:100%; padding:10px; border:1px solid var(--borda); border-radius:8px; font:inherit; background:#fff; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+  .full { grid-column:1 / -1; }
+  button { background:var(--verde); color:#fff; border:0; border-radius:8px; padding:10px 14px; font:inherit; cursor:pointer; margin-top:10px; }
+  button.sec { background:#fff; color:var(--verde); border:1px solid var(--verde); }
+  button:disabled { opacity:.5; }
+  ul { list-style:none; padding:0; margin:0; }
+  li { padding:8px 0; border-bottom:1px solid var(--borda); }
+  li button { margin:0; background:none; color:var(--verde); padding:4px 0; text-align:left; }
+  .aviso { background:#fff6e0; border:1px solid var(--ouro); border-radius:10px; padding:12px; font-size:13px; margin-bottom:16px; }
+  .msg { padding:10px; border-radius:8px; margin-bottom:12px; }
+  .msg.ok { background:#e6f4ee; color:#0f5b44; }
+  .msg.err { background:#fbe9e9; color:#a73333; }
+  .muted { color:var(--cinza); font-size:13px; }
+  .res { background:#f0f6f2; border-radius:8px; padding:12px; margin-top:12px; line-height:1.6; }
+  .linha { display:flex; gap:10px; align-items:center; }
+  @media (max-width:560px) { .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <strong>NutriHome Clínica</strong>
+  <span id="quem"></span>
+  <button id="sair" class="sec" hidden style="margin:0">Sair</button>
+</header>
+
+<main>
+  <div class="aviso">
+    <strong>Versão em teste.</strong> Dados de pacientes só devem ser registrados com consentimento e com a região do banco e a base legal definidas com orientação jurídica (LGPD). Os cálculos são estimativas e não substituem a avaliação profissional.
+  </div>
+
+  <div id="msg" class="msg" hidden></div>
+
+  <!-- ENTRADA -->
+  <section id="entrada" class="card">
+    <h2>Entrar</h2>
+    <label>E-mail</label>
+    <input id="email" type="email" autocomplete="username">
+    <label>Senha (mínimo de 6 caracteres)</label>
+    <input id="senha" type="password" autocomplete="current-password">
+    <div class="linha">
+      <button id="bLogin">Entrar</button>
+      <button id="bCad" class="sec">Criar conta</button>
+    </div>
+    <label>Nome do profissional (apenas para criar conta)</label>
+    <input id="nome" type="text">
+  </section>
+
+  <!-- APP -->
+  <section id="app" hidden>
+    <div class="card">
+      <h2>Novo paciente</h2>
+      <div class="grid">
+        <div><label>Código interno (ex.: PAC-0001)</label><input id="codigo"></div>
+        <div><label>Sexo</label>
+          <select id="sexo"><option value="F">Feminino</option><option value="M">Masculino</option></select>
+        </div>
+        <div class="full"><label>Data de nascimento (opcional)</label><input id="nasc" type="date"></div>
+        <div class="full linha" style="margin-top:10px">
+          <input id="consent" type="checkbox" style="width:auto">
+          <span class="muted">O paciente autorizou o registro dos seus dados para acompanhamento nutricional.</span>
+        </div>
+      </div>
+      <button id="bPac">Salvar paciente</button>
+    </div>
+
+    <div class="card">
+      <h2>Pacientes</h2>
+      <ul id="lista"></ul>
+    </div>
+
+    <div id="avaliacaoBox" class="card" hidden>
+      <h2>Avaliação de <span id="pacNome"></span></h2>
+      <div class="grid">
+        <div><label>Sexo</label>
+          <select id="aSex"><option value="F">Feminino</option><option value="M">Masculino</option></select>
+        </div>
+        <div><label>Idade (anos)</label><input id="aIdade" type="number" min="1"></div>
+        <div><label>Altura (cm)</label><input id="aAlt" type="number" min="1"></div>
+        <div><label>Peso atual (kg)</label><input id="aPeso" type="number" min="1" step="0.1"></div>
+        <div><label>Peso habitual (kg)</label><input id="aPesoHab" type="number" min="0" step="0.1"></div>
+        <div><label>Cintura (cm)</label><input id="aCint" type="number" min="0" step="0.1"></div>
+        <div><label>Quadril (cm)</label><input id="aQuad" type="number" min="0" step="0.1"></div>
+        <div><label>Fator de atividade</label>
+          <select id="aFa">
+            <option value="1.2">1,2 · Sedentário</option>
+            <option value="1.375">1,375 · Levemente ativo</option>
+            <option value="1.55">1,55 · Moderadamente ativo</option>
+            <option value="1.725">1,725 · Muito ativo</option>
+          </select>
+        </div>
+      </div>
+      <div id="res" class="res">Preencha idade, altura e peso.</div>
+      <button id="bAval">Salvar avaliação</button>
+
+      <h2 style="margin-top:18px">Histórico</h2>
+      <ul id="hist"></ul>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   CONFIGURAÇÃO: troque pelos dados do seu projeto Supabase
+   (Project Settings > API). Use SOMENTE a chave pública (anon /
+   publishable). Nunca coloque a chave service_role aqui.
+   ============================================================ */
+const CFG = {
+  url: 'https://SEU-PROJETO.supabase.co',
+  key: 'COLE-AQUI-A-CHAVE-PUBLICA'
+};
+
+const sb = supabase.createClient(CFG.url, CFG.key);
+let user = null, pacientes = [], pacSel = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = (n, d = 1) => (n == null || isNaN(n)) ? '—' : Number(n).toFixed(d).replace('.', ',');
+function msg(t, erro) { const m = $('msg'); m.hidden = false; m.textContent = t; m.className = 'msg ' + (erro ? 'err' : 'ok'); }
+
+/* ---------- Conta ---------- */
+$('bLogin').onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('senha').value });
+  if (error) msg(error.message, true);
+};
+$('bCad').onclick = async () => {
+  const { error } = await sb.auth.signUp({
+    email: $('email').value.trim(), password: $('senha').value,
+    options: { data: { nome: $('nome').value.trim() } }
+  });
+  if (error) msg(error.message, true);
+  else msg('Conta criada. Se o projeto pedir confirmação, confirme o e-mail antes de entrar.');
+};
+$('sair').onclick = () => sb.auth.signOut();
+
+sb.auth.onAuthStateChange(async (_evento, sessao) => {
+  user = sessao?.user || null;
+  $('entrada').hidden = !!user;
+  $('app').hidden = !user;
+  $('sair').hidden = !user;
+  $('quem').textContent = user ? user.email : '';
+  if (user) await carregarPacientes();
+});
+
+/* ---------- Pacientes ---------- */
+async function carregarPacientes() {
+  const { data, error } = await sb.from('pacientes').select('id,codigo,sexo').order('codigo');
+  if (error) return msg(error.message, true);
+  pacientes = data;
+  $('lista').innerHTML = pacientes.map(p =>
+    `<li><button data-id="${p.id}">${esc(p.codigo)} · ${esc(p.sexo || '-')}</button></li>`
+  ).join('') || '<li class="muted">Nenhum paciente cadastrado.</li>';
+}
+
+$('lista').onclick = ev => {
+  const id = ev.target.dataset.id;
+  if (!id) return;
+  pacSel = pacientes.find(p => p.id === id);
+  $('pacNome').textContent = pacSel.codigo;
+  $('avaliacaoBox').hidden = false;
+  mostrar();
+  carregarAvaliacoes();
+};
+
+$('bPac').onclick = async () => {
+  const codigo = $('codigo').value.trim();
+  if (!codigo) return msg('Informe o código do paciente.', true);
+  if (!$('consent').checked) return msg('Registre o consentimento do paciente antes de salvar.', true);
+
+  const { data, error } = await sb.from('pacientes')
+    .insert({ owner_id: user.id, codigo, sexo: $('sexo').value, data_nascimento: $('nasc').value || null })
+    .select('id').single();
+  if (error) return msg(error.message, true);
+
+  const c = await sb.from('consentimentos')
+    .insert({ owner_id: user.id, paciente_id: data.id, versao_termo: 'v1-2026' });
+  if (c.error) return msg(c.error.message, true);
+
+  $('codigo').value = ''; $('nasc').value = ''; $('consent').checked = false;
+  msg('Paciente salvo com consentimento registrado.');
+  await carregarPacientes();
+};
+
+/* ---------- Cálculos (estimativas) ---------- */
+function calcular() {
+  const a = {
+    sexo: $('aSex').value, idade: +$('aIdade').value, h: +$('aAlt').value,
+    w: +$('aPeso').value, wu: +$('aPesoHab').value, wc: +$('aCint').value,
+    hc: +$('aQuad').value, fa: +$('aFa').value
+  };
+  if (!(a.idade > 0 && a.h > 0 && a.w > 0)) return null;
+  const m = a.h / 100, imc = a.w / (m * m);
+  const cls = imc < 18.5 ? 'Baixo peso' : imc < 25 ? 'Eutrofia' : imc < 30 ? 'Sobrepeso'
+            : imc < 35 ? 'Obesidade grau I' : imc < 40 ? 'Obesidade grau II' : 'Obesidade grau III';
+  const tmb = 10 * a.w + 6.25 * a.h - 5 * a.idade + (a.sexo === 'M' ? 5 : -161);
+  const get = tmb * a.fa;
+  const perda = a.wu > 0 ? (a.wu - a.w) / a.wu * 100 : null;
+  const rcq = a.wc > 0 && a.hc > 0 ? a.wc / a.hc : null;
+  return { ...a, imc, cls, tmb, get, perda, rcq };
+}
+
+function mostrar() {
+  const r = calcular();
+  $('res').innerHTML = r
+    ? `IMC ${fmt(r.imc)} kg/m² (${r.cls})<br>TMB (Mifflin-St Jeor) ${Math.round(r.tmb)} kcal<br>GET ${Math.round(r.get)} kcal` +
+      (r.perda != null ? `<br>Perda de peso ${fmt(r.perda)} %` : '') +
+      (r.rcq != null ? `<br>RCQ ${fmt(r.rcq, 2)}` : '') +
+      `<br><span class="muted">Estimativas: confira com as referências que você usa.</span>`
+    : 'Preencha idade, altura e peso.';
+  return r;
+}
+['aSex','aIdade','aAlt','aPeso','aPesoHab','aCint','aQuad','aFa']
+  .forEach(id => $(id).addEventListener('input', mostrar));
+
+/* ---------- Avaliações ---------- */
+$('bAval').onclick = async () => {
+  if (!pacSel) return msg('Escolha um paciente.', true);
+  const r = mostrar();
+  if (!r) return msg('Preencha idade, altura e peso.', true);
+
+  const { error } = await sb.from('avaliacoes').insert({
+    owner_id: user.id,
+    paciente_id: pacSel.id,
+    medidas: {
+      idade: r.idade, sexo: r.sexo, altura_cm: r.h, peso_kg: r.w,
+      peso_habitual_kg: r.wu || null, cintura_cm: r.wc || null,
+      quadril_cm: r.hc || null, fator_atividade: r.fa
+    },
+    resultados: {
+      imc: +r.imc.toFixed(2), classificacao_imc: r.cls, tmb_mifflin: +r.tmb.toFixed(1),
+      get_kcal: +r.get.toFixed(1), perda_peso_pct: r.perda != null ? +r.perda.toFixed(2) : null,
+      rcq: r.rcq != null ? +r.rcq.toFixed(3) : null
+    }
+  });
+  if (error) return msg(error.message, true);
+  msg('Avaliação salva.');
+  carregarAvaliacoes();
+};
+
+async function carregarAvaliacoes() {
+  const { data, error } = await sb.from('avaliacoes')
+    .select('id,data_avaliacao,resultados')
+    .eq('paciente_id', pacSel.id)
+    .order('data_avaliacao', { ascending: false });
+  if (error) return msg(error.message, true);
+  $('hist').innerHTML = data.map(a => {
+    const r = a.resultados || {};
+    return `<li>${new Date(a.data_avaliacao).toLocaleDateString('pt-BR')} · IMC ${esc(r.imc ?? '—')} · GET ${esc(r.get_kcal ?? '—')} kcal</li>`;
+  }).join('') || '<li class="muted">Nenhuma avaliação salva.</li>';
+}
+</script>
+</body>
+</html>
